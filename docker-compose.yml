@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+
+  # SERVICIO 1: La Base de Datos de los miembros
+  svt-db:
+    image: mysql:8.0
+    container_name: mysql-seventeen
+    restart: always
+    environment:
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./datos_mysql:/var/lib/mysql
+    ports:
+      - "${DB_PORT_EXTERNAL}:3306"
+    networks:
+      - svt-network
+
+  # SERVICIO 2: El Backend del Fan Club (Java/Spring Boot)
+  svt-backend:
+    build: ./backend
+    container_name: spring-backend-svt
+    depends_on:
+      - svt-db
+    environment:
+      # Variables del .env al contenedor de Spring
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT_EXTERNAL=${DB_PORT_EXTERNAL}
+      - APP_PASSWORD=${APP_PASSWORD}
+    ports:
+      - "8081:8080"
+    networks:
+      - svt-network
+
+  # SERVICIO 3: Herramienta de visualización (Adminer)
+  svt-admin:
+    image: adminer
+    container_name: adminer-svt
+    ports:
+      - "8082:8080"
+    networks:
+      - svt-network
+
+networks:
+  svt-network:
+    driver: bridge
